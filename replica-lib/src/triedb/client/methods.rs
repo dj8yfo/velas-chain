@@ -4,7 +4,7 @@ use evm_state::H256;
 
 use std::time::Instant;
 
-use crate::triedb::{debug_elapsed, lock_root};
+use crate::triedb::{debug_elapsed, lock_root, NodePath};
 
 use self::app_grpc::backend_client::BackendClient;
 
@@ -35,6 +35,21 @@ fn parse_diff_response(
         })
         .collect()
 }
+impl tonic::IntoRequest<app_grpc::FullSubtreePath> for NodePath {
+    fn into_request(self) -> tonic::Request<app_grpc::FullSubtreePath> {
+        let vecy: Vec<_> = self
+            .path
+            .into_iter()
+            .map(|element| app_grpc::PathElement {
+                hash: Some(app_grpc::Hash {
+                    value: element.0.format_hex(),
+                }),
+                direct: element.1,
+            })
+            .collect();
+        tonic::Request::new(app_grpc::FullSubtreePath { paths: vecy })
+    }
+}
 impl<S> super::Client<S> {
     pub async fn ping(&mut self) -> Result<(), tonic::Status> {
         let request = tonic::Request::new(());
@@ -56,6 +71,22 @@ impl<S> super::Client<S> {
         Ok(response)
     }
 
+    pub async fn get_full_subtree(
+        &mut self,
+        path_elements: NodePath,
+    ) -> Result<app_grpc::GetStateDiffReply, tonic::Status> {
+        let response = self.client.get_full_subtree(path_elements).await?;
+
+        let response = response.into_inner();
+
+        log::debug!(
+            "changeset received {:?} -> {:?}, {}",
+            response.first_root,
+            response.second_root,
+            response.changeset.len()
+        );
+        Ok(response)
+    }
     pub async fn get_raw_bytes(
         &mut self,
         hash: H256,

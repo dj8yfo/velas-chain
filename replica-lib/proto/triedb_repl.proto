@@ -7,6 +7,7 @@ service Backend {
   rpc ping (google.protobuf.Empty) returns (PingReply);
   rpc getRawBytes (GetRawBytesRequest) returns (GetRawBytesReply);
   rpc getStateDiff (GetStateDiffRequest) returns (GetStateDiffReply);
+  rpc getFullSubtree (FullSubtreePath) returns (GetStateDiffReply);
   rpc getBlockRange (google.protobuf.Empty) returns (GetBlockRangeReply);
 }
 
@@ -20,6 +21,15 @@ message Hash {
 
 message GetRawBytesRequest {
   Hash hash = 1;
+}
+
+message PathElement {
+  Hash hash = 1;
+  bool direct = 2;
+}
+
+message FullSubtreePath {
+  repeated PathElement paths = 1;
 }
 
 message GetRawBytesReply {

@@ -40,6 +40,18 @@ impl LittleBig for LedgerStorage {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct NodePath {
+    path: Vec<(H256, bool)>,
+}
+
+#[derive(Debug)]
+pub struct Layers {
+    layer0: H256,
+    layer1: Vec<NodePath>,
+    layer2: Vec<NodePath>,
+}
+
 pub fn lock_root<D, F>(
     db: &D,
     locked: H256,
