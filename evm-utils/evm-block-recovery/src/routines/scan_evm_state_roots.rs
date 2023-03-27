@@ -1,5 +1,5 @@
-mod bigtable_fetcha;
-mod range_map;
+pub mod bigtable_fetcha;
+pub mod range_map;
 
 use evm_state::storage::two_modes_enum::Storage;
 
@@ -18,7 +18,7 @@ pub async fn command(args: &ScanEvmStateRootsArgs) -> Result<(), AppError> {
     let handle = tokio::runtime::Handle::current();
     let storage = Storage::new(evm_state_path, *secondary, *gc)?;
 
-    let mut rangemap = range_map::MasterRange::new(rangemap_json)?;
+    let rangemap = range_map::MasterRange::new(rangemap_json)?;
     let mut fetcha = bigtable_fetcha::BigtableEVMBlockFetcher::new(*workers as usize);
 
     let expected_len = if (*start..*end_exclusive).is_empty() {

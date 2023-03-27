@@ -56,9 +56,9 @@ pub async fn fetch_one_retry_backoff(
 }
 
 
-struct ChunkedRange {
-    range: std::ops::Range<BlockNum>,
-    chunk_size: BlockNum,
+pub struct ChunkedRange {
+    pub range: std::ops::Range<BlockNum>,
+    pub chunk_size: BlockNum,
 }
 
 impl Iterator for ChunkedRange {

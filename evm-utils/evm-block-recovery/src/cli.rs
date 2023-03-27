@@ -53,6 +53,7 @@ pub enum Command {
     RepeatNative(RepeatNativeArgs),
 
     ScanEvmStateRoots(ScanEvmStateRootsArgs),
+    HealthcheckEvmBlocks(HealthCheckBigtEvmBlocks),
 
     /// Generetes Shell Completions for this Utility
     Completion(CompletionArgs),
@@ -253,6 +254,18 @@ pub struct ScanEvmStateRootsArgs {
 
     #[arg(short, long)]
     pub gc: bool,
+
+    #[arg(short, long, value_name = "FILE")]
+    pub rangemap_json: PathBuf,
+}
+
+#[derive(clap::Args)]
+pub struct HealthCheckBigtEvmBlocks {
+    #[arg(short, long)]
+    pub start: BlockNum,
+
+    #[arg(short, long)]
+    pub end_exclusive: BlockNum,
 
     #[arg(short, long, value_name = "FILE")]
     pub rangemap_json: PathBuf,

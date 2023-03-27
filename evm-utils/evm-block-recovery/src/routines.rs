@@ -7,6 +7,7 @@ pub(crate) mod repeat;
 pub(crate) mod restore_chain;
 pub(crate) mod upload;
 pub(crate) mod scan_evm_state_roots;
+pub(crate) mod healthcheck;
 
 pub use check_evm::check_evm;
 pub use check_native::check_native;

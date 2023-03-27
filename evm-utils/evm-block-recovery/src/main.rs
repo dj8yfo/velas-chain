@@ -51,6 +51,8 @@ async fn main() {
         Upload(args) => upload(cli.creds, cli.instance, args).await,
         RepeatEvm(args) => repeat_evm(args).await,
         RepeatNative(args) => repeat_native(args).await,
+        HealthcheckEvmBlocks(ref args) => healthcheck::command(args).await,
+
         ScanEvmStateRoots(ref args) => scan_evm_state_roots::command(args).await,
         Completion(args) => completion(args),
     };
