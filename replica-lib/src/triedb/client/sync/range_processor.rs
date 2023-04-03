@@ -128,5 +128,5 @@ where
     }
 }
 
-const STAGE_TWO_CHANNEL_CAPACITY: usize = 50;
+const STAGE_TWO_CHANNEL_CAPACITY: usize = 240;
 const STAGE_THREE_CHANNEL_CAPACITY: usize = 10000;
