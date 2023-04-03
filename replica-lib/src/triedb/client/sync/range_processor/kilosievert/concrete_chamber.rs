@@ -32,7 +32,7 @@ pub struct StageOnePayload {
     pub changeset: Vec<triedb::DiffChange>,
 }
 
-pub async fn request_short_height<S>(
+async fn request_short_height<S>(
     block_storage: S,
     job_for_a_cowboy: BackendClient<tonic::transport::Channel>,
     state_rpc_address: String,
@@ -79,7 +79,7 @@ where
     stage_one_output.send(result.map_err(Into::into)).await
 }
 
-pub async fn request_long_height<S>(
+async fn request_long_height<S>(
     block_storage: S,
     job_for_a_cowboy: BackendClient<tonic::transport::Channel>,
     state_rpc_address: String,

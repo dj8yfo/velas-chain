@@ -46,3 +46,26 @@ impl KickStartPoint {
         }
     }
 }
+
+#[derive(Clone)]
+pub struct SuccessHeights {
+    data: Arc<Mutex<Vec<BlockNum>>>,
+}
+
+impl SuccessHeights {
+    pub fn new() -> Self {
+        Self {
+            data: Arc::new(Mutex::new(vec![])),
+        }
+        
+    }
+    pub fn push_height(&self, h: BlockNum) {
+        self.data.lock().expect("poison").push(h);
+        
+    }
+    pub fn take(&self) -> Vec<BlockNum> {
+        self.data.lock().expect("poison").drain(..).collect()
+        
+    }
+    
+}

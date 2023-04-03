@@ -3,7 +3,7 @@ use std::ops::Range;
 use evm_state::BlockNum;
 use tokio::sync::mpsc;
 
-use crate::triedb::{client::Client, error::ClientError, EvmHeightIndex, MAX_PREFETCH_RANGE_CHUNK};
+use crate::triedb::{client::{Client, sync::range_processor::kickstart_point::SuccessHeights}, error::ClientError, EvmHeightIndex, MAX_PREFETCH_RANGE_CHUNK};
 
 use self::{chunked_range::ChunkedRange, kickstart_point::KickStartPoint};
 mod chunked_range;
@@ -64,40 +64,53 @@ where
         self.block_storage.prefetch_roots_retried(&range).await?;
 
         self.prefetch_range_retried(&range).await?;
+        let start = kickstart_point.get();
 
         let (stage_one_output, stage_two_input) = mpsc::channel(STAGE_TWO_CHANNEL_CAPACITY);
-        let range_clone = range.clone();
-        let kickstart_clone = kickstart_point.clone();
-        let client_clone = self.client.clone();
-        let block_storage_clone = self.block_storage.clone();
-        let rpc_address = self.state_rpc_address.to_owned();
-        let request_workers = self.request_workers;
-        let _jh_stage_one = tokio::task::spawn(async move {
-            kilosievert::concrete_chamber::process(
-                &client_clone,
-                &block_storage_clone,
-                range_clone,
-                kickstart_clone,
-                rpc_address,
-                stage_one_output,
-                request_workers,
-            )
-            .await;
+        let _jh_stage_one = tokio::task::spawn({
+
+            let range = range.clone();
+            let kickstart_point = kickstart_point.clone();
+            let block_storage = self.block_storage.clone();
+            let client = self.client.clone();
+            let rpc_address = self.state_rpc_address.to_owned();
+            let request_workers = self.request_workers;
+
+            async move {
+                kilosievert::concrete_chamber::process(
+                    &client,
+                    &block_storage,
+                    range,
+                    kickstart_point,
+                    rpc_address,
+                    stage_one_output,
+                    request_workers,
+                )
+                .await;
+            }
         });
 
+        let success_heights = SuccessHeights::new();
+
         let (stage_two_output, mut stage_three_input) = mpsc::channel(STAGE_THREE_CHANNEL_CAPACITY);
-        let kickstart_clone = kickstart_point.clone();
-        let storage_clone = self.storage.clone();
-        let db_workers = self.db_workers;
-        let _jh_stage_two = tokio::task::spawn(async move {
-            kilosievert::concrete_chamber::steel_container::process(
-                kickstart_clone,
-                storage_clone,
-                stage_two_input,
-                stage_two_output,
-                db_workers,
-            )
-            .await;
+        let _jh_stage_two = tokio::task::spawn({
+            let kickstart_point = kickstart_point.clone();
+            let storage = self.storage.clone();
+            let db_workers = self.db_workers;
+            let success_heights = success_heights.clone();
+
+            async move {
+                kilosievert::concrete_chamber::steel_container::process(
+                    kickstart_point,
+                    success_heights,
+                    start,
+                    storage,
+                    stage_two_input,
+                    stage_two_output,
+                    db_workers,
+                )
+                .await;
+            }
         });
 
         let mut count_total_nodes = 0;
@@ -110,10 +123,9 @@ where
                 Ok(result) => {
                     log::debug!("{:#?}", result);
                     count_total_nodes += result.changeset_len;
-                    if count_total_nodes/100_000 > thousands_count {
-                        thousands_count = count_total_nodes/100_000;
+                    if count_total_nodes / 100_000 > thousands_count {
+                        thousands_count = count_total_nodes / 100_000;
                         log::info!("running total nodes {}", count_total_nodes);
-                        
                     }
                     self.range
                         .update(result.request.heights.1)
@@ -128,5 +140,5 @@ where
     }
 }
 
-const STAGE_TWO_CHANNEL_CAPACITY: usize = 240;
+const STAGE_TWO_CHANNEL_CAPACITY: usize = 120;
 const STAGE_THREE_CHANNEL_CAPACITY: usize = 10000;
